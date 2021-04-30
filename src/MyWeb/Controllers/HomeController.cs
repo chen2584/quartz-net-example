@@ -37,9 +37,10 @@ namespace MyWeb.Controllers
             var trigger = TriggerBuilder.Create()
                 .ForJob(job)
                 .UsingJobData("triggerparam", "Simple trigger 1 parameter")
-                .WithIdentity("testrigger", "quartexamples")
-                // .StartNow()
-                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(22, 37))
+                .WithIdentity("testrigger", "quartzexamples")
+                .StartNow()
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(5).WithRepeatCount(5))
+                // .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(22, 37))
                 // .WithCronSchedule("0 0/1 * 1/1 * ? *")
                 // .WithCalendarIntervalSchedule(x => 
                 //     x.WithIntervalInDays(1)
@@ -53,8 +54,26 @@ namespace MyWeb.Controllers
                 // .WithSimpleSchedule(x => x.WithInterval(TimeSpan.FromSeconds(5)).RepeatForever())
                 .Build();
 
+            var trigger2 = TriggerBuilder.Create()
+                .ForJob(job)
+                .UsingJobData("triggerparam", "Simple trigger 1 parameter")
+                .WithIdentity("testrigger2", "quartzexamples")
+                .StartNow()
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(5).WithRepeatCount(5))
+                .Build();
+
+            var trigger3 = TriggerBuilder.Create()
+                .ForJob(job)
+                .UsingJobData("triggerparam", "Simple trigger 1 parameter")
+                .WithIdentity("testrigger3", "quartzexamples")
+                .StartNow()
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(5).WithRepeatCount(5))
+                .Build();
+
             // await _quartzScheduler.ScheduleJob(job, trigger);
             await _quartzScheduler.ScheduleJob(trigger);
+            await _quartzScheduler.ScheduleJob(trigger2);
+            await _quartzScheduler.ScheduleJob(trigger3);
             
             return RedirectToAction("Index");
         }

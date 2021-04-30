@@ -9,8 +9,11 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MyWeb.Jobs;
+using MyWeb.Services;
 using Quartz;
 using Quartz.Impl;
+using Quartz.Impl.Matchers;
 
 namespace MyWeb
 {
@@ -28,6 +31,8 @@ namespace MyWeb
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IEmailService, EmailService>();
+            services.AddTransient<SimpleJob>();
             services.AddSingleton<IScheduler>(_quartzSceduler);
             services.AddControllersWithViews();
         }
@@ -45,6 +50,9 @@ namespace MyWeb
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            _quartzSceduler.JobFactory = new AspnetCoreJobFactory(app.ApplicationServices);
+            _quartzSceduler.Start().Wait();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
@@ -75,12 +83,20 @@ namespace MyWeb
         {
             var collection = new NameValueCollection
             {
-                { "quartz.serializer.type", "binary" }
+                { "quartz.serializer.type", "json" },
+                { "quartz.jobStore.type", "Quartz.Impl.AdoJobStore.JobStoreTX, Quartz" },
+                { "quartz.jobStore.dataSource", "default" },
+                { "quartz.dataSource.default.provider", "Npgsql" },
+                { "quartz.dataSource.default.connectionString", "User ID=postgres;Password=abcABC123;Host=localhost;Port=5432;Database=Quartz;" },
+                { "quartz.jobStore.clustered", "true" },
+                { "quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.StdAdoDelegate, Quartz" }
             };
             
             var factory = new StdSchedulerFactory(collection);
             var scheduler = factory.GetScheduler().Result;
-            scheduler.Start().Wait();
+            // scheduler.ListenerManager.AddTriggerListener(new TriggerListener(), GroupMatcher<TriggerKey>.GroupEquals("quartzexamples"));
+            // scheduler.ListenerManager.AddJobListener(new JobListener());
+            // scheduler.ListenerManager.AddSchedulerListener(new SchedulerListener());
             return scheduler;
         }
     }
